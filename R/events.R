@@ -54,13 +54,24 @@ event_table <- function(df, events, windows) {
 #' Placebo test: is the mean |SCAR| across events larger than for the same
 #' number of randomly drawn non-event days? Returns the share of placebo
 #' draws at least as large as the observed statistic (one-sided p-value).
-placebo_test <- function(df, events, a, b, n_draws = 10000, exclusion = 10, seed = 42) {
+placebo_test <- function(df, events, a, b, n_draws = 10000, exclusion = 10, seed = 42,
+                         exclude_dates = events$event_date, pool_from = NULL) {
   i0 <- map_day0(events$event_date, df$date)
-  i0 <- i0[!is.na(i0)]
   L <- b - a + 1
   scar_all <- window_sum(df$z, seq_len(nrow(df)), a, b) / sqrt(L)
-  near_event <- unique(unlist(lapply(i0, function(i) (i - exclusion):(i + exclusion))))
+  # Events too recent for the full window (e.g. [0,5] at the end of the
+  # sample) are dropped from this window only, so the placebo uses the same N.
+  i0 <- i0[!is.na(i0)]
+  i0 <- i0[is.finite(scar_all[i0])]
+  # Placebo days stay away from every listed event, not just the ones tested.
+  ix <- map_day0(exclude_dates, df$date)
+  ix <- ix[!is.na(ix)]
+  near_event <- unique(unlist(lapply(ix, function(i) (i - exclusion):(i + exclusion))))
   pool <- setdiff(which(is.finite(scar_all)), near_event)
+  # Optionally draw placebo days only from a sub-period (e.g. inside the war),
+  # so events are compared with ordinary days of the same regime.
+  if (!is.null(pool_from)) pool <- pool[df$date[pool] >= pool_from]
+  if (length(pool) < 5 * length(i0)) warning("placebo pool is small: ", length(pool), " days")
   observed <- mean(abs(scar_all[i0]), na.rm = TRUE)
   set.seed(seed)
   draws <- replicate(n_draws, mean(abs(scar_all[sample(pool, length(i0))])))

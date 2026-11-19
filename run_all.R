@@ -66,9 +66,36 @@ save_tab(ev_tab, "06_event_returns")
 
 placebo <- do.call(rbind, lapply(windows, function(w) placebo_test(brent, events, w[1], w[2])))
 indep <- events[!ev_tab$overlaps_previous, ]
-placebo_indep <- do.call(rbind, lapply(windows, function(w) placebo_test(brent, indep, w[1], w[2])))
+placebo_indep <- do.call(rbind, lapply(windows, function(w) placebo_test(brent, indep, w[1], w[2], exclude_dates = events$event_date)))
 placebo$sample <- "all events"; placebo_indep$sample <- "non-overlapping events only"
-placebo_all <- rbind(placebo, placebo_indep)
+WAR_START <- as.Date("2026-02-28")
+by_period <- lapply(list("2019-2025 events" = events$event_date < WAR_START,
+                         "2026 war events" = events$event_date >= WAR_START), function(keep) {
+  do.call(rbind, lapply(windows, function(w) placebo_test(brent, events[keep, ], w[1], w[2], exclude_dates = events$event_date)))
+})
+for (nm in names(by_period)) by_period[[nm]]$sample <- nm
+war_within <- do.call(rbind, lapply(windows, function(w)
+  placebo_test(brent, events[events$event_date >= WAR_START, ], w[1], w[2],
+               exclude_dates = events$event_date, pool_from = WAR_START)))
+war_within$sample <- "2026 war events vs other war days"
+war_within5 <- do.call(rbind, lapply(windows, function(w)
+  placebo_test(brent, events[events$event_date >= WAR_START, ], w[1], w[2], exclusion = 3,
+               exclude_dates = events$event_date, pool_from = WAR_START)))
+war_within5$sample <- "2026 war events vs other war days (+/-3 day exclusion)"
+placebo_all <- rbind(placebo, placebo_indep, by_period[[1]], by_period[[2]], war_within, war_within5)
+
+# Before vs during the 2026 war: levels of risk, not event effects.
+regime <- function(keep_b, label) data.frame(
+  period = label,
+  days = sum(keep_b),
+  brent_ann_vol_pct = sd(brent$r[keep_b]) * sqrt(252),
+  mean_abs_daily_move_pct = mean(abs(brent$r[keep_b])),
+  share_days_move_over_5pct = mean(abs(brent$r[keep_b]) > 5),
+  mean_garch_vol_pct = mean(brent$sigma[keep_b]) * sqrt(252))
+regime_tab <- rbind(
+  regime(brent$date >= as.Date("2019-01-01") & brent$date < WAR_START, "Jan 2019 to Feb 2026"),
+  regime(brent$date >= WAR_START, "Since 28 Feb 2026 (war)"))
+save_tab(regime_tab, "07b_war_regime")
 save_tab(placebo_all, "07_placebo_tests")
 
 # ---- 5. Cross-asset reaction on day 0 -------------------------------------
@@ -113,22 +140,35 @@ ev_vol <- data.frame(event_id = events$event_id, day0 = vol$date[i0_vol],
 ev_vol$gap_day0 <- ev_vol$ovx_day0 - ev_vol$rv21_after_day0
 save_tab(ev_vol, "10_ovx_around_events")
 
-# Placebo: is the implied-minus-realised gap on event days unusually large?
+# Placebo: is the implied-minus-realised gap on event days unusual?
+# Two comparisons per period: any non-event day, and a day matched to each
+# event within +/-250 trading days (so events clustering in high- or
+# low-premium years do not drive the result). Two-sided p-values, because
+# the sign of the gap differs before and during the 2026 war.
 ok_gap <- which(is.finite(vol$gap))
-near <- unique(unlist(lapply(i0_vol, function(i) (i - 10):(i + 10))))
+near <- unique(unlist(lapply(i0_vol[!is.na(i0_vol)], function(i) (i - 10):(i + 10))))
 pool_gap <- setdiff(ok_gap, near)
-obs_gap <- stats::median(ev_vol$gap_day0, na.rm = TRUE)
-set.seed(11)
-draws_gap <- replicate(10000, stats::median(vol$gap[sample(pool_gap, sum(is.finite(ev_vol$gap_day0)))]))
-# Matched placebo: one random day within +/-250 trading days of each event,
-# so the comparison is not driven by events clustering in high-premium years.
-local_pool <- lapply(i0_vol, function(i) intersect(pool_gap, (i - 250):(i + 250)))
-draws_local <- replicate(10000, stats::median(vapply(local_pool, function(p) vol$gap[p[sample.int(length(p), 1)]], numeric(1))))
-gap_test <- data.frame(placebo = c("any non-event day", "matched: within 250 days of each event"),
-                       n_events = sum(is.finite(ev_vol$gap_day0)), observed_median_gap = obs_gap,
-                       placebo_median = c(stats::median(draws_gap), stats::median(draws_local)),
-                       placebo_p95 = c(unname(stats::quantile(draws_gap, 0.95)), unname(stats::quantile(draws_local, 0.95))),
-                       p_value = c((1 + sum(draws_gap >= obs_gap)) / 10001, (1 + sum(draws_local >= obs_gap)) / 10001))
+gap_placebo <- function(sel, label, n_draws = 10000, seed = 11) {
+  keep <- sel & is.finite(ev_vol$gap_day0)
+  obs <- stats::median(ev_vol$gap_day0[keep])
+  set.seed(seed)
+  any_day <- replicate(n_draws, stats::median(vol$gap[sample(pool_gap, sum(keep))]))
+  local_pool <- lapply(i0_vol[keep], function(i) intersect(pool_gap, (i - 250):(i + 250)))
+  matched <- replicate(n_draws, stats::median(vapply(local_pool, function(p)
+    vol$gap[p[sample.int(length(p), 1)]], numeric(1))))
+  two_sided <- function(d) min(1, 2 * min((1 + sum(d >= obs)) / (n_draws + 1),
+                                          (1 + sum(d <= obs)) / (n_draws + 1)))
+  data.frame(events = label, placebo = c("any non-event day", "matched within 250 days"),
+             n_events = sum(keep), observed_median_gap = obs,
+             placebo_median = c(stats::median(any_day), stats::median(matched)),
+             placebo_p05 = c(stats::quantile(any_day, 0.05), stats::quantile(matched, 0.05)),
+             placebo_p95 = c(stats::quantile(any_day, 0.95), stats::quantile(matched, 0.95)),
+             p_value_two_sided = c(two_sided(any_day), two_sided(matched)))
+}
+gap_test <- rbind(gap_placebo(rep(TRUE, nrow(ev_vol)), "all"),
+                  gap_placebo(events$event_date < WAR_START, "2019-2025"),
+                  gap_placebo(events$event_date >= WAR_START, "2026 war"))
+rownames(gap_test) <- NULL
 save_tab(gap_test, "10b_gap_placebo")
 
 ovx_ar <- ar1_half_life(log(raw$ovx$value[raw$ovx$date >= START]))
@@ -196,6 +236,7 @@ md <- c("# Results (generated by run_all.R)", "",
         "## Out-of-sample 99% VaR backtest (2020 onwards; parameters frozen at 2019)", kab(backtest), "",
         "## Event returns (% log return; SCAR = standardised cumulative abnormal return)", kab(ev_tab, 2), "",
         "## Placebo tests (mean |SCAR| vs random non-event days)", kab(placebo_all), "",
+        "## Before vs during the 2026 Iran war", kab(regime_tab), "",
         "## Cross-asset moves on day 0", kab(cross_ev, 2), "",
         "## Implied vs realised (WTI / OVX)", kab(vrp, 2), "", kab(ev_vol, 1), "", "Placebo for the day-0 gap:", kab(gap_test, 3), "",
         "## Mean reversion of log OVX (AR(1), Newey-West SE)", kab(ovx_ar, 4), "",
