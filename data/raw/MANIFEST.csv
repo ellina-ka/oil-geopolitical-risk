@@ -1,0 +1,8 @@
+"series","downloaded_at","rows","md5","url"
+"DCOILBRENTEU","2026-11-19 11:16:40 +08",10305,"5615eeacc4defa54a456bea227644db0","https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILBRENTEU"
+"DCOILWTICO","2026-11-19 11:16:40 +08",10664,"2a32b7168ef915d9098223715eb8da66","https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILWTICO"
+"OVXCLS","2026-11-19 11:16:41 +08",5094,"c51a7f45e1f0409a204431dcfa74b317","https://fred.stlouisfed.org/graph/fredgraph.csv?id=OVXCLS"
+"VIXCLS","2026-11-19 11:16:41 +08",9621,"5879f00e1e0e431265bc3c4467e5716e","https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS"
+"SP500","2026-11-19 11:16:41 +08",2608,"f8973c2c1b22b31337cb980db98b04f1","https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500"
+"DGS10","2026-11-19 11:16:41 +08",16926,"f5c53cf4047ae517b3cf2fae19adfc65","https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
+"DTWEXBGS","2026-11-19 11:16:42 +08",5445,"726fdd37dec6ce9ef7579a4bbeb41443","https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTWEXBGS"

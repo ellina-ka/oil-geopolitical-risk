@@ -1,0 +1,3 @@
+"placebo","n_events","observed_median_gap","placebo_median","placebo_p95","p_value"
+"any non-event day",14,13.4698143804225,4.72622767324068,8.7627412733235,0.0002999700029997
+"matched: within 250 days of each event",14,13.4698143804225,5.21430028311144,9.14090203910931,0.0003999600039996

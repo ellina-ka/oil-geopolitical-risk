@@ -1,0 +1,15 @@
+event_id,event_date,description,direction,source_url
+E01,2019-05-12,Sabotage of four tankers off Fujairah (UAE),escalation,https://en.wikipedia.org/wiki/May_2019_Gulf_of_Oman_incident
+E02,2019-06-13,Attacks on two tankers in the Gulf of Oman,escalation,https://en.wikipedia.org/wiki/June_2019_Gulf_of_Oman_incident
+E03,2019-09-14,Drone and missile attack on Saudi Aramco Abqaiq and Khurais facilities,escalation,https://en.wikipedia.org/wiki/Abqaiq%E2%80%93Khurais_attack
+E04,2020-01-03,US strike kills Qasem Soleimani in Baghdad,escalation,https://en.wikipedia.org/wiki/Assassination_of_Qasem_Soleimani
+E05,2020-01-08,Iranian missile strikes on US bases in Iraq,escalation,https://en.wikipedia.org/wiki/Operation_Martyr_Soleimani
+E06,2023-10-07,Hamas-led attack on Israel,escalation,https://en.wikipedia.org/wiki/October_7_attacks
+E07,2024-01-12,US-UK airstrikes on Houthi targets in Yemen,escalation,https://en.wikipedia.org/wiki/Operation_Poseidon_Archer
+E08,2024-04-13,Iranian drone and missile strikes on Israel,escalation,https://en.wikipedia.org/wiki/April_2024_Iranian_strikes_against_Israel
+E09,2024-04-19,Israeli strike near Isfahan (Iran),escalation,https://en.wikipedia.org/wiki/April_2024_Israeli_strikes_on_Iran
+E10,2024-10-01,Iranian ballistic missile strikes on Israel,escalation,https://en.wikipedia.org/wiki/October_2024_Iranian_strikes_against_Israel
+E11,2024-10-26,Israeli strikes on Iran (military targets; energy sites spared),de-escalation,https://en.wikipedia.org/wiki/October_2024_Israeli_strikes_on_Iran
+E12,2025-06-13,Israeli strikes on Iran begin the Twelve-Day War,escalation,https://en.wikipedia.org/wiki/Twelve-Day_War
+E13,2025-06-22,US strikes on Iranian nuclear sites,escalation,https://en.wikipedia.org/wiki/2025_United_States_strikes_on_Iranian_nuclear_sites
+E14,2025-06-24,Iran-Israel ceasefire takes effect,de-escalation,https://en.wikipedia.org/wiki/Twelve-Day_War
